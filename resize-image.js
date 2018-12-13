@@ -16,7 +16,6 @@ export async function resizeImage(req, res) {
   if (await thumbExists(url, w, h)) {
     const resultingUrl = await createThumbFile(null, url, w, h);
     res.redirect(302, resultingUrl);
-    console.log('using cache');
     return;
   }
 
