@@ -20,22 +20,20 @@ export function getThumbKeyPrefix(originalUrl: string) {
 async function getAllKeys(Prefix: string) {
   const keys = [];
 
-  let KeyMarker = undefined;
-  let VersionIdMarker = undefined;
+  let ContinuationToken = undefined;
 
   do {
     const result = await s3.listObjectsV2Async(cleanDeep({
       Bucket,
       Prefix,
-      KeyMarker,
-      VersionIdMarker,
+      ContinuationToken,
+      MaxKeys: 10,
     }));
 
     keys.push(...result.Contents.map(c => c.Key));
 
-    KeyMarker = result.NextVersionIdMarker;
-    VersionIdMarker = result.NextVersionIdMarker;
-  } while (KeyMarker);
+    ContinuationToken = result.NextContinuationToken;
+  } while (ContinuationToken);
 
   return keys;
 }
