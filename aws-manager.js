@@ -1,5 +1,4 @@
 import { S3 } from 'aws-sdk';
-import Jimp from 'jimp';
 import slugify from 'slugify';
 import bluebird from 'bluebird';
 
@@ -15,6 +14,16 @@ export function getThumbKey(originalUrl: string, w, h) {
 
 export function getThumbKeyPrefix(originalUrl: string) {
   return `thumb/${slugify(originalUrl)}/`;
+}
+
+export async function listUrlsByPrefix(Prefix: string) {
+  const result = await s3.listObjectsV2Async({
+    Bucket,
+    Prefix,
+  });
+
+  const keys = result.Contents.map(c => c.Key);
+  return keys.map(keyToUrl);
 }
 
 export async function deleteThumb(url: string) {
@@ -49,6 +58,10 @@ export async function thumbExists(originalUrl: string, w, h) {
   return result.Contents.length > 0;
 }
 
+export function keyToUrl(Key: string) {
+  return `https://s3-${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${process.env.S3_BUCKET}/${Key}`;
+}
+
 export async function createThumbFile(buffer: Buffer, originalUrl: string, w, h) {
   const Key = getThumbKey(originalUrl, w, h);
 
@@ -57,10 +70,10 @@ export async function createThumbFile(buffer: Buffer, originalUrl: string, w, h)
       Body: buffer,
       Bucket,
       Key,
-      ContentType: Jimp.MIME_JPEG,
+      ContentType: 'image/jpeg',
       ACL: 'public-read',
     });
   }
 
-  return `https://s3-${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${process.env.S3_BUCKET}/${Key}`;
+  return keyToUrl(Key);
 }
