@@ -1,6 +1,7 @@
 import { S3 } from 'aws-sdk';
 import slugify from 'slugify';
 import bluebird from 'bluebird';
+import cleanDeep from 'clean-deep';
 
 const Bucket = process.env.S3_BUCKET;
 
@@ -16,13 +17,31 @@ export function getThumbKeyPrefix(originalUrl: string) {
   return `thumb/${slugify(originalUrl)}/`;
 }
 
-export async function listUrlsByPrefix(Prefix: string) {
-  const result = await s3.listObjectsV2Async({
-    Bucket,
-    Prefix,
-  });
+async function getAllKeys(Prefix: string) {
+  const keys = [];
 
-  const keys = result.Contents.map(c => c.Key);
+  let KeyMarker = undefined;
+  let VersionIdMarker = undefined;
+
+  do {
+    const result = await s3.listObjectsV2Async(cleanDeep({
+      Bucket,
+      Prefix,
+      KeyMarker,
+      VersionIdMarker,
+    }));
+
+    keys.push(...result.Contents.map(c => c.Key));
+
+    KeyMarker = result.NextVersionIdMarker;
+    VersionIdMarker = result.NextVersionIdMarker;
+  } while (KeyMarker);
+
+  return keys;
+}
+
+export async function listUrlsByPrefix(Prefix: string) {
+  const keys = await getAllKeys(Prefix);
   return keys.map(keyToUrl);
 }
 
