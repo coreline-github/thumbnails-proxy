@@ -2,9 +2,8 @@ import 'dotenv/config';
 import normalizeUrl from 'normalize-url';
 import bluebird from 'bluebird';
 import { timeout } from 'promise-timeout';
-import {listUrlsByPrefix} from "../aws-manager";
+import {listUrlsByPrefix, thumbExists} from "../aws-manager";
 import {resizeFromUrl} from "../resize-from-url";
-
 
 const usage = `
   USAGE: nnode scripts/create-thumbs-for-s3-directory <directory> <start-index> <width or auto> <height or auto>
@@ -31,6 +30,10 @@ if (!width && !height) {
   console.log(`Total images ${allUrls.length}`);
   for (let i = startIndex; i < allUrls.length; i += 1) {
     const url = normalizeUrl(allUrls[i]);
+    if (await thumbExists(url, width, height)) {
+      console.log('skipping', url, 'because thumb already exists');
+      continue;
+    }
     let occurredError;
     let attemptCount = 1;
     do {
