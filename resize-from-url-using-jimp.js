@@ -3,7 +3,7 @@ import jimp from "jimp";
 import {createThumbFile} from "./aws-manager";
 
 export async function resizeFromUrlUsingJimp(url: string, w, h) {
-  const image = await jimp.read(url);
+  const image = await jimp.read(encodeURI(url));
   const resizedBuffer = await image
   .resize(w || jimp.AUTO, h || jimp.AUTO)
   .getBufferAsync(jimp.MIME_JPEG);
